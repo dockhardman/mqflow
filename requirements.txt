@@ -3,6 +3,7 @@ markdown-it-py==2.1.0 ; python_full_version >= "3.8.0" and python_full_version <
 mdurl==0.1.2 ; python_full_version >= "3.8.0" and python_full_version < "3.11.0"
 pygments==2.14.0 ; python_full_version >= "3.8.0" and python_full_version < "3.11.0"
 python-dateutil==2.8.2 ; python_full_version >= "3.8.0" and python_full_version < "3.11.0"
+pytz==2022.7.1 ; python_full_version >= "3.8.0" and python_full_version < "3.11.0"
 rich==13.3.1 ; python_full_version >= "3.8.0" and python_full_version < "3.11.0"
 six==1.16.0 ; python_full_version >= "3.8.0" and python_full_version < "3.11.0"
 typing-extensions==4.4.0 ; python_full_version >= "3.8.0" and python_version < "3.9"
