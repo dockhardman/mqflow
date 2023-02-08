@@ -3,6 +3,8 @@ from abc import ABC
 from numbers import Number
 from typing import Any, Optional, Text
 
+from simple_pymq.exceptions import FullError, EmptyError
+
 
 class Broker(ABC):
     def __init__(
@@ -75,15 +77,20 @@ class QueueBroker(Broker):
     ) -> Any:
         block = block or self.block
         timeout = timeout or self.timeout
+
         if block is True:
             item = await asyncio.wait_for(self.queue.get(), timeout=timeout)
         else:
             item = self.queue.get_nowait()
+
         return item
 
     async def get_nowait(self) -> Any:
-        item = self.queue.get_nowait()
-        return item
+        try:
+            item = self.queue.get_nowait()
+            return item
+        except asyncio.QueueEmpty:
+            raise EmptyError
 
     async def join(self) -> None:
         await self.queue.join()
@@ -99,7 +106,10 @@ class QueueBroker(Broker):
             await self.queue.put_nowait(item)
 
     async def put_nowait(self, item: Any):
-        item = self.queue.put_nowait(item)
+        try:
+            self.queue.put_nowait(item)
+        except asyncio.QueueFull:
+            raise FullError
 
     async def qsize(self) -> int:
         return self.queue.qsize()
