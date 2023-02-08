@@ -21,10 +21,10 @@ class Broker(ABC):
         self.block = block
         self.timeout = timeout
 
-    async def empty(self):
+    async def empty(self) -> bool:
         raise NotImplementedError
 
-    async def full(self):
+    async def full(self) -> bool:
         raise NotImplementedError
 
     async def get(self, block: bool = True, timeout: Optional[Number] = None) -> Any:
@@ -33,18 +33,21 @@ class Broker(ABC):
     async def get_nowait(self) -> Any:
         raise NotImplementedError
 
-    async def join(self):
+    async def join(self) -> None:
         raise NotImplementedError
 
     async def put(
         self, item: Any, block: bool = True, timeout: Optional[Number] = None
-    ):
+    ) -> None:
         raise NotImplementedError
 
-    async def put_nowait(self, item: Any):
+    async def put_nowait(self, item: Any) -> None:
         raise NotImplementedError
 
-    async def qsize(self):
+    async def qsize(self) -> int:
+        raise NotImplementedError
+
+    async def task_done(self) -> None:
         raise NotImplementedError
 
 
@@ -113,3 +116,6 @@ class QueueBroker(Broker):
 
     async def qsize(self) -> int:
         return self.queue.qsize()
+
+    async def task_done(self) -> None:
+        self.queue.task_done()
