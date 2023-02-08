@@ -8,15 +8,16 @@ packages = [{include = "simple_pymq"}]
 
 [tool.poetry.dependencies]
 python = ">=3.8.0,<3.11.0"
+rich = "*"
 
 
 [tool.poetry.group.dev.dependencies]
-yapf = "*"
+black = "*"
 flake8 = "*"
 flake9 = "*"
-black = "*"
 pytest = "*"
 pytest-asyncio = "*"
+yapf = "*"
 
 [build-system]
 requires = ["poetry-core"]
