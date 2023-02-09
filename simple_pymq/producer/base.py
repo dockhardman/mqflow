@@ -31,7 +31,7 @@ class TimeCounterProducer(Producer):
         name: Text = "TimeCounterProducer",
         timeout: Optional[Number] = None,
         count_seconds: float = 1.0,
-        max_task_count: Optional[int] = None,
+        max_produce_count: Optional[int] = None,
         put_value: Any = 1,
         *args,
         **kwargs,
@@ -40,7 +40,7 @@ class TimeCounterProducer(Producer):
             name=name, *args, timeout=timeout, **kwargs
         )
         self.count_seconds = count_seconds
-        self.max_task_count = max_task_count
+        self.max_produce_count = max_produce_count
         self.put_value = put_value
 
     async def produce(
@@ -49,7 +49,7 @@ class TimeCounterProducer(Producer):
         *args,
         timeout: Optional[Number] = None,
         count_seconds: Optional[float] = None,
-        max_task_count: Optional[int] = None,
+        max_produce_count: Optional[int] = None,
         put_value: Any = None,
         ignore_full_error: bool = False,
         raise_full_error: bool = False,
@@ -57,7 +57,7 @@ class TimeCounterProducer(Producer):
     ):
         timeout = timeout or self.timeout
         count_seconds = self.count_seconds if count_seconds is None else count_seconds
-        max_task_count = max_task_count or self.max_task_count or float("inf")
+        max_produce_count = max_produce_count or self.max_produce_count or float("inf")
         put_value = put_value or self.put_value
 
         count = 0
@@ -79,7 +79,7 @@ class TimeCounterProducer(Producer):
                     )
 
             count += 1
-            if count >= max_task_count:
+            if count >= max_produce_count:
                 break
 
             await asyncio.sleep(count_seconds)
