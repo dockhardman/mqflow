@@ -5,16 +5,9 @@ version: 2.1
 jobs:
   pytest:
     docker:
-      - image: python:3.8-slim
+      - image: cimg/python:3.8
     steps:
       - checkout
-      - run:
-          name: Install environment packages
-          command:
-              apt-get update -qq && \
-                apt-get install -y --no-install-recommends \
-                    git nano vim wget curl htop ca-certificates && \
-                python -m pip install --upgrade pip
       - run:
           name: Install poetry
           command:
