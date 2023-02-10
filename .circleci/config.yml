@@ -13,7 +13,7 @@ jobs:
           shell: /bin/bash
           command:
               curl -sSL https://install.python-poetry.org | POETRY_HOME=/opt/poetry python - && \
-                ln -s /opt/poetry/bin/poetry /usr/local/bin && \
+                /bin/ln -s /opt/poetry/bin/poetry /usr/local/bin && \
                 poetry config virtualenvs.create false
       - run:
           name: Install dependencies
