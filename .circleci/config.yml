@@ -5,23 +5,14 @@ version: 2.1
 jobs:
   pytest:
     docker:
-      - image: python:3.8
+      - image: cimg/python:3.8
     steps:
       - checkout
-      - run:
-          name: Install poetry
-          shell: /bin/bash
-          command:
-              curl -sSL https://install.python-poetry.org | POETRY_HOME=/opt/poetry python - && \
-                /bin/ln -s /opt/poetry/bin/poetry /usr/local/bin && \
-                poetry config virtualenvs.create false
-      - run:
-          name: Install dependencies
-          shell: /bin/bash
-          command: poetry install --no-root && poetry show
+      - python/install-packages:
+          pkg-manager: pip
+          pip-dependency-file: requirements-test.txt
       - run:
           name: Run tests
-          shell: /bin/bash
           command: python -m pytest
 
 workflows:
