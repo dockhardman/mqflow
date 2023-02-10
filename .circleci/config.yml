@@ -9,6 +9,13 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Install environment packages
+          command:
+              RUN apt-get update -qq && \
+                apt-get install -y --no-install-recommends \
+                    git nano vim wget curl htop ca-certificates && \
+                python -m pip install --upgrade pip
+      - run:
           name: Install poetry
           command:
               curl -sSL https://install.python-poetry.org | POETRY_HOME=/opt/poetry python - && \
