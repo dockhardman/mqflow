@@ -1,0 +1,21 @@
+# Use the latest 2.1 version of CircleCI pipeline process engine.
+# See: https://circleci.com/docs/2.0/configuration-reference
+version: 2.1
+
+jobs:
+  pytest:
+    docker:
+      - image: cimg/python:3.8
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: pip install -r requirements-test.txt
+      - run:
+          name: Run tests
+          command: python -m pytest
+
+workflows:
+  run-pytest:
+    jobs:
+      - pytest
