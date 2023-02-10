@@ -9,8 +9,9 @@ jobs:
     steps:
       - checkout
       - run: python --version
-      - python/install-packages:
-          pkg-manager: poetry
+      - run:
+          name: Install dependencies
+          command: poetry install
       - run:
           name: Run tests
           command: python -m pytest
