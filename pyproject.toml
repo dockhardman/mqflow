@@ -9,9 +9,9 @@ packages = [{include = "simple_pymq"}]
 [tool.poetry.dependencies]
 python = ">=3.8.0,<3.11.0"
 rich = "*"
-croniter = {version = "*", extras = ["cron"]}
 pytz = "*"
-
+aiofiles = {version = "*", extras = ["fs"]}
+croniter = {version = "*", extras = ["cron"]}
 
 [tool.poetry.group.dev.dependencies]
 black = "*"
@@ -20,6 +20,11 @@ flake9 = "*"
 pytest = "*"
 pytest-asyncio = "*"
 yapf = "*"
+
+[tool.poetry.extras]
+all = ["aiofiles", "croniter",]
+cron = ["croniter",]
+fs = ["aiofiles",]
 
 [build-system]
 requires = ["poetry-core"]
