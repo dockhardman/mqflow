@@ -1,4 +1,5 @@
 from .broker.base import Broker, QueueBroker
+from .broker.fs import SimpleFileBroker
 from .consumer.base import Consumer, PrintConsumer
 from .pipeline.sequential import SimpleMessageQueue, MessageQueue
 from .producer.base import Producer, TimeCounterProducer
@@ -14,6 +15,7 @@ __all__ = [
     "PrintConsumer",
     "Producer",
     "QueueBroker",
+    "SimpleFileBroker",
     "SimpleMessageQueue",
     "TimeCounterProducer",
 ]
