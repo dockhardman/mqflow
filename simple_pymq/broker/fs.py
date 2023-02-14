@@ -1,9 +1,10 @@
 import asyncio
+import pickle
 import time
 from numbers import Number
 from pathlib import Path
 from simple_pymq.broker.base import Broker
-from typing import Any, AsyncGenerator, Optional, Text, Type
+from typing import Any, AsyncGenerator, List, Optional, Text, Type
 
 from simple_pymq.exceptions import FullError, EmptyError
 
@@ -112,42 +113,28 @@ class SimpleFileBroker(Broker):
 
         if self.file.parent.exists() is False:
             self.file.parent.mkdir(parents=True)
-        self.file.touch(exist_ok=True)
+        if self.file.exists() is False:
+            with open(self.file, "wb") as f:
+                f.write(pickle.dumps([]))
 
     async def empty(self) -> bool:
-        async with SimpleFileLock(self.lock_path, lock_timeout=self.lock_timeout):
-            async for _ in self._read_lines(filepath=self.file):
-                return False
-            else:
-                return True
+        count = await self._lock_count()
+        return True if count == 0 else False
 
     async def full(self) -> bool:
-        if self.maxsize <= 0:
-            return False
+        count = await self._lock_count()
+        return True if count >= self.maxsize else False
 
-        count = 0
-        async with SimpleFileLock(self.lock_path, lock_timeout=self.lock_timeout):
-            async for _ in self._read_lines(filepath=self.file):
-                count += 1
-                if count >= self.maxsize:
-                    return True
-        return False
-
-    async def get(self, block: bool = True, timeout: Optional[Number] = None) -> bytes:
+    async def get(self, block: bool = True, timeout: Optional[Number] = None) -> Any:
         if block is True:
-            item = await asyncio.wait_for(self._wait_and_get(), timeout=timeout)
+            item = await asyncio.wait_for(self._lock_wait_and_get(), timeout=timeout)
         else:
             item = await self.get_nowait()
 
         return item
 
-    async def get_nowait(self) -> bytes:
-        async with SimpleFileLock(
-            self.lock_path, block=False, lock_timeout=self.lock_timeout
-        ):
-            item = self._get_first_and_write_others()
-
-        return item
+    async def get_nowait(self) -> Any:
+        return await self._lock_get_nowait()
 
     async def join(self) -> None:
         while True:
@@ -160,88 +147,84 @@ class SimpleFileBroker(Broker):
         self, item: Any, block: bool = True, timeout: Optional[Number] = None
     ) -> None:
         if block is True:
-            item = await asyncio.wait_for(self._wait_and_put(), timeout=timeout)
+            item = await asyncio.wait_for(
+                self._lock_wait_and_put(item=item), timeout=timeout
+            )
         else:
             item = await self.put_nowait(item=item)
 
     async def put_nowait(self, item: Any) -> None:
-        async with SimpleFileLock(
-            self.lock_path, block=False, lock_timeout=self.lock_timeout
-        ):
-            item = self._put_at_the_end(item_bytes=item)
+        await self._lock_put_nowait(item=item)
 
     async def qsize(self) -> int:
-        count = 0
-        async with SimpleFileLock(
-            self.lock_path, block=False, lock_timeout=self.lock_timeout
-        ):
-            async for _ in self._read_lines(filepath=self.file):
-                count += 1
-        return count
+        return await self._lock_count()
 
     async def task_done(self) -> None:
         self.unfinished -= 1
 
-    async def _wait_and_get(self) -> Any:
-
+    async def _lock_wait_and_get(self) -> Any:
         while True:
             async with SimpleFileLock(
-                self.lock_path, block=False, lock_timeout=self.lock_timeout
+                self.lock_path, block=True, lock_timeout=self.lock_timeout
             ):
-                empty = True
-                async for _ in self._read_lines(filepath=self.file):
-                    empty = False
-                    break
+                items = await self._read_pickle()
 
-                if empty is False:
-                    item = await self._get_first_and_write_others()
+                if len(items) > 0:
+                    item = items.pop(0)
+                    await self._dump_pickle(items=items)
                     return item
 
             await asyncio.sleep(0.05)
 
-    async def _wait_and_put(self, item_bytes: bytes) -> None:
+    async def _lock_get_nowait(self) -> Any:
+        async with SimpleFileLock(
+            self.lock_path, block=False, lock_timeout=self.lock_timeout
+        ):
+            items = await self._read_pickle()
+            if len(items) > 0:
+                item = items.pop(0)
+                await self._dump_pickle(items=items)
+                return item
+            else:
+                raise EmptyError
 
+    async def _lock_wait_and_put(self, item: Any) -> None:
         while True:
             async with SimpleFileLock(
-                self.lock_path, block=False, lock_timeout=self.lock_timeout
+                self.lock_path, block=True, lock_timeout=self.lock_timeout
             ):
-                full = False
-                count = 0
-                async for _ in self._read_lines(filepath=self.file):
-                    count += 0
-                    if count >= self.maxsize:
-                        full = True
-                        break
-
-                if full is False:
-                    await self._put_at_the_end(item_bytes=item_bytes)
+                items = await self._read_pickle()
+                if len(items) < self.maxsize:
+                    items.append(item)
+                    await self._dump_pickle(items=items)
                     return None
 
             await asyncio.sleep(0.05)
 
-    async def _get_first_and_write_others(self) -> Any:
-        head = None
-        tails = []
-
-        async for line in self._read_lines(filepath=self.file):
-            if head is None:
-                head = line
+    async def _lock_put_nowait(self, item: Any) -> None:
+        async with SimpleFileLock(
+            self.lock_path, block=False, lock_timeout=self.lock_timeout
+        ):
+            items = await self._read_pickle()
+            if len(items) < self.maxsize:
+                items.append(item)
+                await self._dump_pickle(items=items)
+                return None
             else:
-                tails.append(line)
+                raise FullError
 
-        if head is None:
-            raise EmptyError
+    async def _lock_count(self) -> int:
+        async with SimpleFileLock(
+            self.lock_path, block=True, lock_timeout=self.lock_timeout
+        ):
+            items = await self._read_pickle()
+            return len(items)
 
-        async with aiofiles.open(self.file, "w") as f:
-            f.writelines(tails)
+    async def _read_pickle(self) -> List[Any]:
+        async with aiofiles.open(self.file, "rb") as f:
+            data = await f.read()
+            return pickle.loads(data)
 
-        return head
-
-    async def _put_at_the_end(self, item_bytes: bytes) -> None:
-        async with aiofiles.open(self.file, "ab") as f:
-            f.write(b"\n" + item_bytes)
-
-    async def _read_lines(self, filepath: Path) -> AsyncGenerator[bytes, None]:
-        async with aiofiles.open(filepath, "rb") as f:
-            async for line in f:
-                yield line
+    async def _dump_pickle(self, items: List[Any]) -> None:
+        async with aiofiles.open(self.file, "wb") as f:
+            await f.write(pickle.dumps(items))
