@@ -4,6 +4,7 @@ import pytest
 
 from simple_pymq import SimpleFileBroker
 from simple_pymq.broker.fs import SimpleFileLock
+from simple_pymq.exceptions import FullError, EmptyError
 from tests.config import settings as test_settings
 
 
@@ -53,3 +54,45 @@ async def test_simple_file_broker_basic_operation():
 
     assert await q.get() is True
     assert await q.get_nowait() is True
+
+
+@pytest.mark.asyncio
+async def test_simple_file_broker_handle_operation_error():
+    broker_file = "/tmp/test_simple_file_broker_handle_operation_error_"
+    broker_file += f"{test_id}.queue"
+
+    q = SimpleFileBroker(file=broker_file, maxsize=2)
+
+    try:
+        await q.get_nowait()
+    except EmptyError:
+        pass
+
+    await q.put(True)
+    await q.put(True)
+    try:
+        await q.put_nowait(True)
+    except FullError:
+        pass
+
+
+@pytest.mark.asyncio
+async def test_queue_broker_handle_timeout_error():
+    broker_file = "/tmp/test_queue_broker_handle_timeout_error_"
+    broker_file += f"{test_id}.queue"
+
+    q = SimpleFileBroker(file=broker_file, maxsize=2)
+
+    try:
+        await q.get(block=True, timeout=0.001)
+        assert False
+    except asyncio.exceptions.TimeoutError:
+        pass
+
+    try:
+        await q.put(True, block=True, timeout=0.001)
+        await q.put(True, block=True, timeout=0.001)
+        await q.put(True, block=True, timeout=0.001)
+        assert False
+    except asyncio.TimeoutError:
+        pass
