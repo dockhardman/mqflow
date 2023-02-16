@@ -48,3 +48,29 @@ async def test_simple_message_queue_massive_tasks():
 
     await mq.run(broker=q, producers=producers, consumers=consumers)
     assert await q.qsize() == 0
+
+
+@pytest.mark.asyncio
+async def test_simple_message_queue_of_simple_file_broker():
+    total_tasks = 1000  # The performance is not good now.
+    consumer_count = 10
+    producer_count = 10
+
+    broker_file = "/tmp/test_simple_message_queue_of_simple_file_broker_"
+    broker_file += f"{test_id}.queue"
+
+    q = SimpleFileBroker(file=broker_file, maxsize=128)
+    consumers = [
+        NullConsumer(max_consume_count=total_tasks // consumer_count)
+        for _ in range(consumer_count)
+    ]
+    producers = [
+        TimeCounterProducer(
+            count_seconds=0.0, max_produce_count=total_tasks // producer_count
+        )
+        for _ in range(producer_count)
+    ]
+    mq = SimpleMessageQueue()
+
+    await mq.run(broker=q, producers=producers, consumers=consumers)
+    assert await q.qsize() == 0
