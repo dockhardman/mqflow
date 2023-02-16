@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "simple-pymq"
-version = "0.1.0"
+version = "0.2.0"
 description = "Simple python message queue framework is ready to serve."
 authors = ["Allen Chou <f1470891079@gmail.com>"]
 readme = "README.md"
