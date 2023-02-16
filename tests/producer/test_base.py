@@ -12,7 +12,11 @@ async def test_time_counter_producer_basic_operation():
     q = QueueBroker(maxsize=5)
 
     try:
-        await producer.produce(broker=q, raise_full_error=True)
+        await producer.produce(
+            broker=q, block=False, timeout=1.0, raise_full_error=True
+        )
         assert False
     except FullError:
         assert True
+
+    assert await q.full()

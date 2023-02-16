@@ -1,12 +1,15 @@
 import os
 import logging
+import uuid
 from pathlib import Path
 from typing import Any, Optional, Text, Union
+
+from rich.console import Console
 
 
 def get_os_env(
     key: Text, *args, default: Any, return_type: Text = "str"
-) -> Optional[Union[Text, bool, int, float, Path]]:
+) -> Optional[Union[Text, bool, int, float, Path, uuid.UUID]]:
     return_type = return_type.casefold()
     value = os.environ.get(key)
 
@@ -22,6 +25,8 @@ def get_os_env(
         valid_value = Path(value)
     elif return_type == "bool":
         valid_value = bool(value)
+    elif return_type == "uuid":
+        valid_value = uuid.UUID(value)
     else:
         raise ValueError(f"Unknown return type: '{return_type}'")
 
@@ -35,3 +40,4 @@ class Settings:
 
 settings = Settings()
 logger = logging.getLogger(settings.logger_name)
+console = Console()
