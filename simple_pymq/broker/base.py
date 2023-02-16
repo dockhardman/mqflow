@@ -78,8 +78,8 @@ class QueueBroker(Broker):
     async def get(
         self, block: Optional[bool] = None, timeout: Optional[Number] = None
     ) -> Any:
-        block = block or self.block
-        timeout = timeout or self.timeout
+        block = self.block if block is None else block
+        timeout = self.timeout if timeout is None else timeout
 
         if block is True:
             item = await asyncio.wait_for(self.queue.get(), timeout=timeout)
@@ -99,14 +99,18 @@ class QueueBroker(Broker):
         await self.queue.join()
 
     async def put(
-        self, item: Any, block: bool = True, timeout: Optional[Number] = None
+        self, item: Any, block: Optional[bool] = None, timeout: Optional[Number] = None
     ) -> None:
-        block = block or self.block
-        timeout = timeout or self.timeout
+        block = self.block if block is None else block
+        timeout = self.timeout if timeout is None else timeout
+
         if block is True:
             await asyncio.wait_for(self.queue.put(item), timeout=timeout)
         else:
-            await self.queue.put_nowait(item)
+            try:
+                self.queue.put_nowait(item)
+            except asyncio.QueueFull:
+                raise FullError
 
     async def put_nowait(self, item: Any):
         try:

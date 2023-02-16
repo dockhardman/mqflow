@@ -125,7 +125,12 @@ class SimpleFileBroker(Broker):
         count = await self._lock_count()
         return True if count >= self.maxsize else False
 
-    async def get(self, block: bool = True, timeout: Optional[Number] = None) -> Any:
+    async def get(
+        self, block: Optional[bool] = None, timeout: Optional[Number] = None
+    ) -> Any:
+        block = self.block if block is None else block
+        timeout = self.timeout if timeout is None else timeout
+
         if block is True:
             item = await asyncio.wait_for(self._lock_wait_and_get(), timeout=timeout)
         else:
@@ -144,8 +149,11 @@ class SimpleFileBroker(Broker):
                 asyncio.sleep(0.05)
 
     async def put(
-        self, item: Any, block: bool = True, timeout: Optional[Number] = None
+        self, item: Any, block: Optional[bool] = None, timeout: Optional[Number] = None
     ) -> None:
+        block = self.block if block is None else block
+        timeout = self.timeout if timeout is None else timeout
+
         if block is True:
             item = await asyncio.wait_for(
                 self._lock_wait_and_put(item=item), timeout=timeout

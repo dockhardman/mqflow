@@ -29,15 +29,17 @@ class Consumer(ABC):
         self,
         broker: Type[Broker],
         *args,
-        block: bool = True,
+        block: Optional[bool] = None,
         timeout: Optional[float] = None,
         max_consume_count: Optional[int] = None,
         raise_error: bool = True,
         **kwargs,
     ):
-        block = block or self.block
-        timeout = timeout or self.timeout
-        max_consume_count = max_consume_count or self.max_consume_count
+        block = self.block if block is None else block
+        timeout = self.timeout if timeout is None else timeout
+        max_consume_count = (
+            self.max_consume_count if max_consume_count is None else max_consume_count
+        )
         max_consume_count = (
             float("inf")
             if max_consume_count <= 0 or math.isinf(max_consume_count)
