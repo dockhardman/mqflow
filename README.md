@@ -1,4 +1,7 @@
 # simple-pymq #
+
+[![dockhardman](https://circleci.com/gh/dockhardman/simple-pymq.svg?style=shield)](https://app.circleci.com/pipelines/github/dockhardman/simple-pymq)
+
 Simple python message queue framework is ready to serve.
 
 ## Installation ##
