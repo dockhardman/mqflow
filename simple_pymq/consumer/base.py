@@ -79,7 +79,7 @@ class NullConsumer(Consumer):
         max_consume_count: int = 0,
         **kwargs,
     ):
-        super(PrintConsumer, self).__init__(
+        super(NullConsumer, self).__init__(
             name=name,
             *args,
             block=block,
