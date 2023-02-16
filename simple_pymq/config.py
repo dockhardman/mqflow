@@ -4,6 +4,8 @@ import uuid
 from pathlib import Path
 from typing import Any, Optional, Text, Union
 
+from rich.console import Console
+
 
 def get_os_env(
     key: Text, *args, default: Any, return_type: Text = "str"
@@ -38,3 +40,4 @@ class Settings:
 
 settings = Settings()
 logger = logging.getLogger(settings.logger_name)
+console = Console()

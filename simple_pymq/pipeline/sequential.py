@@ -1,9 +1,11 @@
 import asyncio
 from abc import ABC
 from typing import List, Type, Union
+
 from simple_pymq.broker.base import Broker
 from simple_pymq.consumer.base import Consumer
 from simple_pymq.producer.base import Producer
+from simple_pymq.config import logger
 
 
 class MessageQueue(ABC):
@@ -59,4 +61,8 @@ class SimpleMessageQueue(MessageQueue):
             )
             tasks.append(_consumer_task)
 
-        await asyncio.gather(*tasks)
+        task_results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        for task_result in task_results:
+            if isinstance(task_result, Exception):
+                logger.exception(task_result)
