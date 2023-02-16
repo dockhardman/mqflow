@@ -12,17 +12,56 @@ logger = logging.getLogger(settings.logger_name)
 
 class Consumer(ABC):
     def __init__(
-        self, name: Text = "Consumer", *args, max_consume_count: int = 0, **kwargs
+        self,
+        name: Text = "Consumer",
+        *args,
+        block: bool = True,
+        timeout: Optional[float] = None,
+        max_consume_count: int = 0,
+        **kwargs,
     ):
         self.name = name or self.__class__.__name__
         self.max_consume_count = 0 if max_consume_count <= 0 else int(max_consume_count)
+        self.block = block
+        self.timeout = timeout
 
     async def listen(
-        self, broker: Type[Broker], *args, raise_error: bool = True, **kwargs
+        self,
+        broker: Type[Broker],
+        *args,
+        block: bool = True,
+        timeout: Optional[float] = None,
+        max_consume_count: Optional[int] = None,
+        raise_error: bool = True,
+        **kwargs,
     ):
+        block = block or self.block
+        timeout = timeout or self.timeout
+        max_consume_count = max_consume_count or self.max_consume_count
+        max_consume_count = (
+            float("inf")
+            if max_consume_count <= 0 or math.isinf(max_consume_count)
+            else math.ceil(max_consume_count)
+        )
+
+        consume_count = 0
         while True:
-            item = await broker.get()
-            await self.consume(item=item)
+            item = await broker.get(block=block, timeout=timeout)
+
+            try:
+                await self.consume(item=item, broker=broker)
+
+            except Exception as e:
+                logger.exception(e)
+                logger.error(f"Consumer '{self.name}' raise error: {str(e)}")
+                if raise_error is True:
+                    raise e
+
+            finally:
+                consume_count += 1
+
+            if consume_count >= max_consume_count:
+                break
 
     async def consume(self, item: Any):
         raise NotImplementedError
@@ -30,44 +69,22 @@ class Consumer(ABC):
 
 class PrintConsumer(Consumer):
     def __init__(
-        self, name: Text = "PrintConsumer", *args, max_consume_count: int = 0, **kwargs
-    ):
-        super(PrintConsumer, self).__init__(
-            name=name, *args, max_consume_count=max_consume_count, **kwargs
-        )
-
-    async def listen(
         self,
-        broker: Type[Broker],
+        name: Text = "PrintConsumer",
         *args,
-        max_consume_count: Optional[int] = None,
-        raise_error: bool = True,
+        block: bool = True,
+        timeout: Optional[float] = None,
+        max_consume_count: int = 0,
         **kwargs,
     ):
-        if max_consume_count is None:
-            max_consume_count = self.max_consume_count
-        if max_consume_count <= 0 or math.isinf(max_consume_count):
-            max_consume_count = float("inf")
-        else:
-            max_consume_count = math.ceil(max_consume_count)
-
-        consume_count = 0
-        while True:
-            item = await broker.get()
-
-            try:
-                await self.consume(item=item, broker=broker)
-
-            except Exception as e:
-                if raise_error is True:
-                    raise e
-                else:
-                    logger.exception(e)
-                    logger.error(f"Consumer '{self.name}' raise error: {str(e)}")
-
-            consume_count += 1
-            if consume_count >= max_consume_count:
-                break
+        super(PrintConsumer, self).__init__(
+            name=name,
+            *args,
+            block=block,
+            timeout=timeout,
+            max_consume_count=max_consume_count,
+            **kwargs,
+        )
 
     async def consume(self, item: Any, broker: Type[Broker]):
         print(item)
