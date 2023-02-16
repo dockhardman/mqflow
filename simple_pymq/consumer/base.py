@@ -67,6 +67,29 @@ class Consumer(ABC):
         raise NotImplementedError
 
 
+class NullConsumer(Consumer):
+    def __init__(
+        self,
+        name: Text = "NullConsumer",
+        *args,
+        block: bool = True,
+        timeout: Optional[float] = None,
+        max_consume_count: int = 0,
+        **kwargs,
+    ):
+        super(PrintConsumer, self).__init__(
+            name=name,
+            *args,
+            block=block,
+            timeout=timeout,
+            max_consume_count=max_consume_count,
+            **kwargs,
+        )
+
+    async def consume(self, item: Any, broker: Type[Broker]):
+        await broker.task_done()
+
+
 class PrintConsumer(Consumer):
     def __init__(
         self,
