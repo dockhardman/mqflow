@@ -1,15 +1,9 @@
-import asyncio
-
 import pytest
 
-from simple_pymq import (
-    NullConsumer,
-    PrintConsumer,
-    QueueBroker,
-    SimpleFileBroker,
-    SimpleMessageQueue,
-    TimeCounterProducer,
-)
+from simple_pymq.consumer import NullConsumer, PrintConsumer
+from simple_pymq.broker import QueueBroker, SimpleFileBroker
+from simple_pymq.producer import TimeCounterProducer
+from simple_pymq.pipeline import SimpleMessageQueue
 from tests.config import settings as test_settings
 
 

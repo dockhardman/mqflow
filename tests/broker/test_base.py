@@ -2,7 +2,7 @@ import asyncio
 
 import pytest
 
-from simple_pymq import QueueBroker
+from simple_pymq.broker import QueueBroker
 from simple_pymq.exceptions import FullError, EmptyError
 
 

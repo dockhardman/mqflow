@@ -2,7 +2,8 @@ import asyncio
 
 import pytest
 
-from simple_pymq import PrintConsumer, QueueBroker
+from simple_pymq.broker import QueueBroker
+from simple_pymq.consumer import PrintConsumer
 
 
 @pytest.mark.parametrize("item_count,consume_count", [(4, 2), (2, 2)])

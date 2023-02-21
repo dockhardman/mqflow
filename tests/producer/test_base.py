@@ -1,8 +1,7 @@
-import asyncio
-
 import pytest
 
-from simple_pymq import QueueBroker, TimeCounterProducer
+from simple_pymq.broker import QueueBroker
+from simple_pymq.producer import TimeCounterProducer
 from simple_pymq.exceptions import FullError
 
 
