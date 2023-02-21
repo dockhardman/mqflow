@@ -1,9 +1,9 @@
 import asyncio
 import pickle
 from numbers import Number
-from simple_pymq.broker.base import Broker
 from typing import Any, List, Optional, Text
 
+from simple_pymq.broker.base import Broker
 from simple_pymq.exceptions import FullError, EmptyError
 
 
