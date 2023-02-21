@@ -28,6 +28,7 @@ class RedisBroker(Broker):
         key_base_name: Optional[Text] = None,
         key_prefix: Text = "",
         key_postfix: Text = "",
+        key_expire: int = 60 * 60 * 24 * 7,
         block: bool = True,
         timeout: Optional[Number] = None,
         **kwargs
@@ -46,6 +47,7 @@ class RedisBroker(Broker):
         self.key_name = (
             key_prefix + (key_base_name if key_base_name else self.name) + key_postfix
         )
+        self.key_expire = key_expire
 
         self.redis_client = Redis(
             host=self.host,
@@ -96,7 +98,10 @@ class RedisBroker(Broker):
     async def put_nowait(self, item: Any) -> None:
         if await self.full() is True:
             raise FullError("Queue is full.")
-        await self.redis_client.lpush(self.key_name, pickle.dumps(item))
+        pipe = self.redis_client.pipeline()
+        pipe.lpush(self.key_name, pickle.dumps(item))
+        pipe.expire(self.key_name, time=self.key_expire)
+        await pipe.execute()
 
     async def put(
         self, item: Any, block: Optional[bool] = None, timeout: Optional[Number] = None
@@ -109,7 +114,10 @@ class RedisBroker(Broker):
                 if await self.full() is True:
                     await asyncio.sleep(0.05)
                 else:
-                    self.redis_client.lpush(self.key_name, pickle.dumps(item))
+                    pipe = self.redis_client.pipeline()
+                    pipe.lpush(self.key_name, pickle.dumps(item))
+                    pipe.expire(self.key_name, time=self.key_expire)
+                    await pipe.execute()
                     break
 
         if block is True:
