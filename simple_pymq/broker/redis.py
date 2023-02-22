@@ -1,9 +1,10 @@
 import asyncio
 import pickle
 from numbers import Number
-from typing import Any, List, Optional, Text
+from typing import Any, List, Optional, Text, Tuple
 
 from simple_pymq.broker.base import Broker
+from simple_pymq.config import logger
 from simple_pymq.exceptions import FullError, EmptyError
 
 
@@ -31,7 +32,7 @@ class RedisBroker(Broker):
         key_expire: int = 60 * 60 * 24 * 7,
         block: bool = True,
         timeout: Optional[Number] = None,
-        **kwargs
+        **kwargs,
     ):
         if is_redis_installed is False:
             raise ImportError("Package 'aiofiles' is not installed.")
@@ -56,6 +57,9 @@ class RedisBroker(Broker):
             username=username,
             password=password,
         )
+        logger.debug(
+            f"{self.name}: {username}:******@{self.host}:{self.port}.{self.db}"
+        )
 
     async def qsize(self) -> int:
         return await self.redis_client.llen(self.key_name)
@@ -72,12 +76,15 @@ class RedisBroker(Broker):
         return True if count >= self.maxsize else False
 
     async def get_nowait(self) -> Any:
-        data = await self.redis_client.rpop(self.key_name, count=1)
+        data: List[bytes] = await self.redis_client.rpop(self.key_name, count=1)
 
-        if data is None:
+        if data is None or len(data) == 0:
             raise EmptyError("Queue is empty.")
 
-        return pickle.loads(data)
+        assert (len(data) == 1, "Only one item should be returned.")
+        value_bytes = data[0]
+
+        return pickle.loads(value_bytes)
 
     async def get(
         self, block: Optional[bool] = None, timeout: Optional[Number] = None
@@ -86,10 +93,15 @@ class RedisBroker(Broker):
         timeout = self.timeout if timeout is None else timeout
 
         if block is True:
-            data: List[bytes] = await self.redis_client.brpop(
+            data: Optional[Tuple[bytes, bytes]] = await self.redis_client.brpop(
                 self.key_name, timeout=timeout
             )
-            item = pickle.loads(data)
+
+            if data is None or len(data) == 0:
+                raise asyncio.TimeoutError("Queue is empty.")
+
+            _, value_bytes = data
+            item = pickle.loads(value_bytes)
         else:
             item = await self.get_nowait()
 
@@ -124,7 +136,7 @@ class RedisBroker(Broker):
             try:
                 await asyncio.wait_for(_wait_put(item=item), timeout=timeout)
             except asyncio.TimeoutError:
-                raise FullError("Queue is full.")
+                raise asyncio.TimeoutError("Queue is full.")
 
         else:
             item = await self.put_nowait(item=item)
