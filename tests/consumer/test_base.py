@@ -3,14 +3,14 @@ import asyncio
 import pytest
 
 from simple_pymq.broker import QueueBroker
-from simple_pymq.consumer import PrintConsumer
+from simple_pymq.consumer import NullConsumer
 
 
 @pytest.mark.parametrize("item_count,consume_count", [(4, 2), (2, 2)])
 @pytest.mark.asyncio
 async def test_consumer_basic_operation(item_count: int, consume_count: int):
     q = QueueBroker(maxsize=10)
-    c = PrintConsumer()
+    c = NullConsumer()
 
     task = asyncio.create_task(c.listen(broker=q, max_consume_count=consume_count))
 
