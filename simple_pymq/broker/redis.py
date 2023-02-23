@@ -10,7 +10,7 @@ from simple_pymq.exceptions import FullError, EmptyError
 
 is_redis_installed = True
 try:
-    from redis.asyncio import Redis
+    from redis.asyncio import BlockingConnectionPool, Redis
 except ImportError:
     is_redis_installed = False
 
@@ -18,14 +18,15 @@ except ImportError:
 class RedisBroker(Broker):
     def __init__(
         self,
-        host: Text,
-        port: int,
-        db: int,
-        username: Optional[Text] = None,
-        password: Optional[Text] = None,
         name: Text = "RedisBroker",
         maxsize: int = 0,
         *args,
+        host: Optional[Text] = None,
+        port: Optional[int] = None,
+        db: Optional[int] = None,
+        username: Optional[Text] = None,
+        password: Optional[Text] = None,
+        connection_pool: Optional["BlockingConnectionPool"] = None,
         key_base_name: Optional[Text] = None,
         key_prefix: Text = "",
         key_postfix: Text = "",
@@ -44,21 +45,32 @@ class RedisBroker(Broker):
         self.host = host
         self.port = port
         self.db = db
-
+        self.redis_conn_pool = connection_pool
         self.key_name = (
             key_prefix + (key_base_name if key_base_name else self.name) + key_postfix
         )
         self.key_expire = key_expire
 
-        self.redis_client = Redis(
-            host=self.host,
-            port=self.port,
-            db=self.db,
-            username=username,
-            password=password,
-        )
+        if self.redis_conn_pool is not None:
+            self.redis_conn_pool = connection_pool
+        elif self.host is not None:
+            self.redis_conn_pool = BlockingConnectionPool(
+                host=self.host,
+                port=self.port,
+                db=self.db,
+                max_connections=20,
+                username=username,
+                password=password,
+            )
+        else:
+            raise ValueError("Either 'connection_pool' or 'host' must be provided.")
+
+        self.redis_client = Redis(connection_pool=self.redis_conn_pool)
         logger.debug(
-            f"{self.name}: {username}:******@{self.host}:{self.port}.{self.db}"
+            f"{self.name}: {self.redis_conn_pool.connection_kwargs.get('username')}"
+            + f":******@{self.redis_conn_pool.connection_kwargs.get('host')}"
+            + f":{self.redis_conn_pool.connection_kwargs.get('port')}"
+            + f".{self.redis_conn_pool.connection_kwargs.get('db')}"
         )
 
     async def qsize(self) -> int:
@@ -149,4 +161,4 @@ class RedisBroker(Broker):
                 asyncio.sleep(0.05)
 
     async def task_done(self) -> None:
-        self.unfinished -= 1
+        pass
