@@ -1,7 +1,7 @@
 import pytest
 
 from simple_pymq.consumer import NullConsumer, NullConsumer
-from simple_pymq.broker import QueueBroker, SimpleFileBroker
+from simple_pymq.broker import QueueBroker, RedisBroker, SimpleFileBroker
 from simple_pymq.producer import TimeCounterProducer
 from simple_pymq.pipeline import SimpleMessageQueue
 from tests.config import settings as test_settings
@@ -68,3 +68,37 @@ async def test_simple_message_queue_of_simple_file_broker():
 
     await mq.run(broker=q, producers=producers, consumers=consumers)
     assert await q.qsize() == 0
+
+
+@pytest.mark.asyncio
+async def test_simple_message_queue_of_redis_broker():
+    total_tasks = 300
+    consumer_count = 10
+    producer_count = 10
+
+    q = RedisBroker(
+        host=test_settings.test_redis_host,
+        port=test_settings.test_redis_port,
+        db=test_settings.test_redis_db,
+        username=test_settings.test_redis_username,
+        password=test_settings.test_redis_password,
+        key_base_name=f"{test_id}_test_simple_message_queue_of_redis_broker",
+        key_expire=30,
+        maxsize=64,
+    )
+    consumers = [
+        NullConsumer(max_consume_count=total_tasks // consumer_count)
+        for _ in range(consumer_count)
+    ]
+    producers = [
+        TimeCounterProducer(
+            count_seconds=0.01, max_produce_count=total_tasks // producer_count
+        )
+        for _ in range(producer_count)
+    ]
+    mq = SimpleMessageQueue()
+
+    await mq.run(broker=q, producers=producers, consumers=consumers)
+    assert await q.qsize() == 0
+
+    await q.redis_conn_pool.disconnect()
