@@ -12,6 +12,7 @@ rich = "*"
 pytz = "*"
 aiofiles = {version = "*", extras = ["fs"]}
 croniter = {version = "*", extras = ["cron"]}
+redis = {version = ">=4.2.*", extras = ["redis"]}
 
 [tool.poetry.group.dev.dependencies]
 black = "*"
@@ -22,9 +23,15 @@ pytest-asyncio = "*"
 yapf = "*"
 
 [tool.poetry.extras]
-all = ["aiofiles", "croniter",]
+all = ["aiofiles", "croniter", "redis",]
 cron = ["croniter",]
 fs = ["aiofiles",]
+
+[tool.pytest.ini_options]
+log_cli = false
+log_cli_level = "INFO"
+log_file = "log/test.log"
+log_file_level = "DEBUG"
 
 [build-system]
 requires = ["poetry-core"]

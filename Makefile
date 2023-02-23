@@ -1,6 +1,6 @@
 # Developing
 install_all:
-	poetry install --with dev
+	poetry install --with dev -E all
 
 format_code:
 	black .
