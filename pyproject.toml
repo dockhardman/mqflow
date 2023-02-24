@@ -15,6 +15,7 @@ croniter = {version = "*", extras = ["cron"]}
 redis = {version = ">=4.2.*", extras = ["redis"]}
 pika = {version = "*", extras = ["amqp"]}
 pyassorted = {version = "*", extras = ["amqp"]}
+yarl = {version = "*", extras = ["amqp"]}
 
 [tool.poetry.group.dev.dependencies]
 black = "*"
