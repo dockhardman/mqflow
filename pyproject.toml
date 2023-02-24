@@ -13,6 +13,7 @@ pytz = "*"
 aiofiles = {version = "*", extras = ["fs"]}
 croniter = {version = "*", extras = ["cron"]}
 redis = {version = ">=4.2.*", extras = ["redis"]}
+pika = {version = "*", extras = ["amqp"]}
 
 [tool.poetry.group.dev.dependencies]
 black = "*"
@@ -23,9 +24,10 @@ pytest-asyncio = "*"
 yapf = "*"
 
 [tool.poetry.extras]
-all = ["aiofiles", "croniter", "redis",]
+all = ["aiofiles", "croniter", "pika", "redis",]
 cron = ["croniter",]
 fs = ["aiofiles",]
+amqp = ["pika",]
 
 [tool.pytest.ini_options]
 log_cli = false
