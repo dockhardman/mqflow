@@ -331,6 +331,22 @@ dev = ["pre-commit", "tox"]
 testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
+name = "pyassorted"
+version = "0.0.2"
+description = "A library has light-weight assorted utils in Prue-Python."
+category = "main"
+optional = false
+python-versions = ">=3.7.1,<4.0.0"
+files = [
+    {file = "pyassorted-0.0.2-py3-none-any.whl", hash = "sha256:940445871d351d055df5dd1e933f6f9d73f397ec0c891fcb118d461930cba3f8"},
+    {file = "pyassorted-0.0.2.tar.gz", hash = "sha256:b170976a8f9da9950c209ab40fe01647b2e770d030321c1726d92da5ac816d8a"},
+]
+
+[package.dependencies]
+pytz = "*"
+rich = "*"
+
+[[package]]
 name = "pycodestyle"
 version = "2.6.0"
 description = "Python style guide checker"
@@ -535,4 +551,4 @@ fs = ["aiofiles"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.0,<3.11.0"
-content-hash = "0e819b7255139391acc824840a694b68fb25dc620c7c68b3aca0f6c8ef8950c7"
+content-hash = "372fc42d796aa576162ee78514e6ced91a82fd5dca0706fdca603f73b104dcf2"

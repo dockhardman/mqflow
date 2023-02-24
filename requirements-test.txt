@@ -18,6 +18,7 @@ pathspec==0.11.0 ; python_full_version >= "3.8.0" and python_full_version < "3.1
 pika[amqp]==1.3.1 ; python_full_version >= "3.8.0" and python_full_version < "3.11.0"
 platformdirs==3.0.0 ; python_full_version >= "3.8.0" and python_full_version < "3.11.0"
 pluggy==1.0.0 ; python_full_version >= "3.8.0" and python_full_version < "3.11.0"
+pyassorted[amqp]==0.0.2 ; python_full_version >= "3.8.0" and python_full_version < "3.11.0"
 pycodestyle==2.6.0 ; python_full_version >= "3.8.0" and python_full_version < "3.11.0"
 pyflakes==2.2.0 ; python_full_version >= "3.8.0" and python_full_version < "3.11.0"
 pygments==2.14.0 ; python_full_version >= "3.8.0" and python_full_version < "3.11.0"
