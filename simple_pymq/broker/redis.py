@@ -162,3 +162,6 @@ class RedisBroker(Broker):
 
     async def task_done(self) -> None:
         pass
+
+    async def close(self) -> None:
+        await self.redis_client.connection_pool.disconnect()

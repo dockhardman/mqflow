@@ -101,4 +101,4 @@ async def test_simple_message_queue_of_redis_broker():
     await mq.run(broker=q, producers=producers, consumers=consumers)
     assert await q.qsize() == 0
 
-    await q.redis_conn_pool.disconnect()
+    await q.close()
