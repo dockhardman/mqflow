@@ -50,6 +50,9 @@ class Broker(ABC):
     async def task_done(self) -> None:
         raise NotImplementedError
 
+    async def close(self) -> None:
+        pass
+
 
 class QueueBroker(Broker):
     def __init__(
