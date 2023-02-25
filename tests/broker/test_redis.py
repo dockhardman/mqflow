@@ -5,7 +5,7 @@ from redis.client import Redis
 
 from simple_pymq.broker import RedisBroker
 from simple_pymq.exceptions import FullError, EmptyError
-from tests.config import console, logger, settings as test_settings
+from tests.config import logger, settings as test_settings
 
 
 test_id = str(test_settings.test_uuid).split("-")[0]
@@ -22,7 +22,7 @@ try:
     assert r.ping() is True
     is_redis_ready = True
     logger.debug("Redis is ready.")
-except Exception as e:
+except Exception:
     logger.warning("Redis is not ready, then use memory broker instead.")
     from simple_pymq.broker import QueueBroker as RedisBroker
 
@@ -40,27 +40,27 @@ async def test_redis_broker_basic_operation():
         maxsize=2,
     )
 
-    assert await q.qsize() is 0
+    assert await q.qsize() == 0
     assert await q.empty() is True
     assert await q.full() is False
 
     await q.put(True)
-    assert await q.qsize() is 1
+    assert await q.qsize() == 1
     assert await q.empty() is False
     assert await q.full() is False
 
     await q.put_nowait(True)
-    assert await q.qsize() is 2
+    assert await q.qsize() == 2
     assert await q.empty() is False
     assert await q.full() is True
 
     assert await q.get() is True
-    assert await q.qsize() is 1
+    assert await q.qsize() == 1
     assert await q.empty() is False
     assert await q.full() is False
 
     assert await q.get_nowait() is True
-    assert await q.qsize() is 0
+    assert await q.qsize() == 0
     assert await q.empty() is True
     assert await q.full() is False
 
@@ -77,7 +77,7 @@ async def test_redis_broker_no_maxsize():
         key_expire=30,
     )
 
-    assert await q.qsize() is 0
+    assert await q.qsize() == 0
     assert await q.empty() is True
     assert await q.full() is False
 
