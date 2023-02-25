@@ -29,6 +29,9 @@ class Settings:
         "test_redis_password", default=None, return_type="str"
     )
 
+    # AMQP Config
+    test_amqp_url: Text = get_os_env("test_amqp_url", default=None, return_type="str")
+
 
 settings = Settings()
 console = Console()

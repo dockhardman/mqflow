@@ -55,13 +55,15 @@ class AmqpBroker(Broker):
         params = pika.URLParameters(str(self.amqp_url))
         self.amqp_connection = pika.BlockingConnection(params)
         self.amqp_channel = self.amqp_connection.channel()
-        self.amqp_channel.queue_declare(queue=self.amqp_queue_name, passive=True)
+        self.amqp_channel.queue_declare(
+            queue=self.amqp_queue_name, passive=self.passive
+        )
         self.amqp_exchange = amqp_exchange
 
     async def qsize(self) -> int:
         message_count = 0
         try:
-            amqp_method: "Method" = run_func(
+            amqp_method: "Method" = await run_func(
                 self.amqp_channel.queue_declare,
                 queue=self.amqp_queue_name,
                 passive=self.passive,
@@ -109,7 +111,8 @@ class AmqpBroker(Broker):
 
         if block is True:
             item = await asyncio.wait_for(
-                _wait_get(), timeout=(None if timeout <= 0 else timeout)
+                _wait_get(),
+                timeout=(None if timeout is None or timeout <= 0 else timeout),
             )
         else:
             item = await self.get_nowait()
@@ -143,7 +146,8 @@ class AmqpBroker(Broker):
 
         if block is True:
             await asyncio.wait_for(
-                _wait_put(item), timeout=(None if timeout <= 0 else timeout)
+                _wait_put(item),
+                timeout=(None if timeout is None or timeout <= 0 else timeout),
             )
         else:
             await self.put_nowait(item)
