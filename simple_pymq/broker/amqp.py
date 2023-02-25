@@ -32,6 +32,7 @@ class AmqpBroker(Broker):
         amqp_url: Text,
         amqp_query: Optional[Dict] = None,
         amqp_queue_name: Optional[Text] = None,
+        amqp_exchange: Text = "",
         passive: bool = True,
         block: bool = True,
         timeout: Optional[Number] = None,
@@ -54,6 +55,8 @@ class AmqpBroker(Broker):
         params = pika.URLParameters(str(self.amqp_url))
         self.amqp_connection = pika.BlockingConnection(params)
         self.amqp_channel = self.amqp_connection.channel()
+        self.amqp_channel.queue_declare(queue=self.amqp_queue_name, passive=True)
+        self.amqp_exchange = amqp_exchange
 
     async def qsize(self) -> int:
         message_count = 0
@@ -81,8 +84,8 @@ class AmqpBroker(Broker):
         return True if count >= self.maxsize else False
 
     async def get_nowait(self) -> Any:
-        message: MESSAGE_PACK = self.amqp_channel.basic_get(
-            queue=self.amqp_queue_name, auto_ack=True
+        message: MESSAGE_PACK = await run_func(
+            self.amqp_channel.basic_get, queue=self.amqp_queue_name, auto_ack=True
         )
 
         if message[2] is None:
@@ -96,33 +99,54 @@ class AmqpBroker(Broker):
         block = self.block if block is None else block
         timeout = self.timeout if timeout is None else timeout
 
-        async def _wait_get() -> bytes:
+        async def _wait_get() -> Any:
             while True:
-                message: MESSAGE_PACK = self.amqp_channel.basic_get(
-                    queue=self.amqp_queue_name, auto_ack=True
-                )
-                if message[2] is None:
+                try:
+                    item = await self.get_nowait()
+                    return item
+                except EmptyError:
                     await asyncio.sleep(0.05)
-                else:
-                    return message[2]
 
         if block is True:
-            value_bytes = await asyncio.wait_for(
+            item = await asyncio.wait_for(
                 _wait_get(), timeout=(None if timeout <= 0 else timeout)
             )
-            item = pickle.loads(value_bytes)
         else:
             item = await self.get_nowait()
 
         return item
 
     async def put_nowait(self, item: Any) -> None:
-        pass
+        if await self.full() is True:
+            raise FullError("Queue is full.")
+
+        await run_func(
+            self.amqp_channel.basic_publish,
+            exchange=self.amqp_exchange,
+            routing_key=self.amqp_queue_name,
+            body=pickle.dumps(item),
+        )
 
     async def put(
         self, item: Any, block: Optional[bool] = None, timeout: Optional[Number] = None
     ) -> None:
-        pass
+        block = self.block if block is None else block
+        timeout = self.timeout if timeout is None else timeout
+
+        async def _wait_put(item: Any) -> None:
+            while True:
+                try:
+                    await self.put_nowait(item)
+                    return None
+                except FullError:
+                    await asyncio.sleep(0.05)
+
+        if block is True:
+            await asyncio.wait_for(
+                _wait_put(item), timeout=(None if timeout <= 0 else timeout)
+            )
+        else:
+            await self.put_nowait(item)
 
     async def join(self) -> None:
         while True:
