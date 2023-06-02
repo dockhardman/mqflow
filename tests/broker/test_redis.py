@@ -3,8 +3,8 @@ import asyncio
 import pytest
 from redis.client import Redis
 
-from simple_pymq.broker import RedisBroker
-from simple_pymq.exceptions import FullError, EmptyError
+from mqflow.broker import RedisBroker
+from mqflow.exceptions import FullError, EmptyError
 from tests.config import console, logger, settings as test_settings
 
 
@@ -24,7 +24,7 @@ try:
     logger.debug("Redis is ready.")
 except Exception as e:
     logger.warning("Redis is not ready, then use memory broker instead.")
-    from simple_pymq.broker import QueueBroker as RedisBroker
+    from mqflow.broker import QueueBroker as RedisBroker
 
 
 @pytest.mark.asyncio

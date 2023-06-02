@@ -1,9 +1,9 @@
 import pytest
 
-from simple_pymq.consumer import NullConsumer, NullConsumer
-from simple_pymq.broker import QueueBroker, RedisBroker, SimpleFileBroker
-from simple_pymq.producer import TimeCounterProducer
-from simple_pymq.pipeline import SimpleMessageQueue
+from mqflow.consumer import NullConsumer, NullConsumer
+from mqflow.broker import QueueBroker, RedisBroker, SimpleFileBroker
+from mqflow.producer import TimeCounterProducer
+from mqflow.pipeline import SimpleMessageQueue
 from tests.config import settings as test_settings
 
 

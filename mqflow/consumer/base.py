@@ -3,8 +3,8 @@ import math
 from abc import ABC
 from typing import Any, Optional, Text, Type
 
-from simple_pymq.broker.base import Broker
-from simple_pymq.config import settings
+from mqflow.broker.base import Broker
+from mqflow.config import settings
 
 
 logger = logging.getLogger(settings.logger_name)

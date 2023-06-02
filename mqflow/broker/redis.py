@@ -3,9 +3,9 @@ import pickle
 from numbers import Number
 from typing import Any, List, Optional, Text, Tuple
 
-from simple_pymq.broker.base import Broker
-from simple_pymq.config import logger
-from simple_pymq.exceptions import FullError, EmptyError
+from mqflow.broker.base import Broker
+from mqflow.config import logger
+from mqflow.exceptions import FullError, EmptyError
 
 
 is_redis_installed = True

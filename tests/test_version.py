@@ -1,5 +1,5 @@
-import simple_pymq
+import mqflow
 
 
 def test_version():
-    assert simple_pymq.__version__ == "0.1.0"
+    assert mqflow.__version__ == "0.1.0"

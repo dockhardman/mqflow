@@ -2,9 +2,9 @@ import asyncio
 
 import pytest
 
-from simple_pymq.broker import SimpleFileBroker
-from simple_pymq.broker.fs import SimpleFileLock
-from simple_pymq.exceptions import FullError, EmptyError
+from mqflow.broker import SimpleFileBroker
+from mqflow.broker.fs import SimpleFileLock
+from mqflow.exceptions import FullError, EmptyError
 from tests.config import settings as test_settings
 
 

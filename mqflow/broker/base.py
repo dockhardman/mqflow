@@ -3,7 +3,7 @@ from abc import ABC
 from numbers import Number
 from typing import Any, Optional, Text
 
-from simple_pymq.exceptions import FullError, EmptyError
+from mqflow.exceptions import FullError, EmptyError
 
 
 class Broker(ABC):

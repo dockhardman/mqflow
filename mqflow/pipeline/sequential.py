@@ -2,10 +2,10 @@ import asyncio
 from abc import ABC
 from typing import List, Type, Union
 
-from simple_pymq.broker.base import Broker
-from simple_pymq.consumer.base import Consumer
-from simple_pymq.producer.base import Producer
-from simple_pymq.config import logger
+from mqflow.broker.base import Broker
+from mqflow.consumer.base import Consumer
+from mqflow.producer.base import Producer
+from mqflow.config import logger
 
 
 class MessageQueue(ABC):

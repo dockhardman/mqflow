@@ -5,7 +5,7 @@ install_all:
 format_code:
 	black .
 
-sync_packages:
+update_packages:
 	poetry update
 	poetry export --without-hashes -f requirements.txt --output requirements.txt
 	poetry export --without-hashes -E all --with dev -f requirements.txt --output requirements-test.txt

@@ -4,7 +4,7 @@ from typing import Text
 
 from rich.console import Console
 
-from simple_pymq.config import get_os_env
+from mqflow.config import get_os_env
 
 
 class Settings:

@@ -3,10 +3,10 @@ import pickle
 import time
 from numbers import Number
 from pathlib import Path
-from simple_pymq.broker.base import Broker
+from mqflow.broker.base import Broker
 from typing import Any, AsyncGenerator, List, Optional, Text, Type
 
-from simple_pymq.exceptions import FullError, EmptyError
+from mqflow.exceptions import FullError, EmptyError
 
 
 is_aiofiles_installed = True

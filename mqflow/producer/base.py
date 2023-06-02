@@ -4,9 +4,9 @@ from abc import ABC
 from numbers import Number
 from typing import Any, Optional, Text, Type
 
-from simple_pymq.broker.base import Broker
-from simple_pymq.config import settings
-from simple_pymq.exceptions import FullError
+from mqflow.broker.base import Broker
+from mqflow.config import settings
+from mqflow.exceptions import FullError
 
 
 logger = logging.getLogger(settings.logger_name)

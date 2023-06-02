@@ -2,8 +2,8 @@ import asyncio
 
 import pytest
 
-from simple_pymq.broker import QueueBroker
-from simple_pymq.consumer import NullConsumer
+from mqflow.broker import QueueBroker
+from mqflow.consumer import NullConsumer
 
 
 @pytest.mark.parametrize("item_count,consume_count", [(4, 2), (2, 2)])

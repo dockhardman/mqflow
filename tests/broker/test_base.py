@@ -2,8 +2,8 @@ import asyncio
 
 import pytest
 
-from simple_pymq.broker import QueueBroker
-from simple_pymq.exceptions import FullError, EmptyError
+from mqflow.broker import QueueBroker
+from mqflow.exceptions import FullError, EmptyError
 
 
 @pytest.mark.asyncio

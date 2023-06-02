@@ -1,8 +1,8 @@
 import pytest
 
-from simple_pymq.broker import QueueBroker
-from simple_pymq.producer import TimeCounterProducer
-from simple_pymq.exceptions import FullError
+from mqflow.broker import QueueBroker
+from mqflow.producer import TimeCounterProducer
+from mqflow.exceptions import FullError
 
 
 @pytest.mark.asyncio
