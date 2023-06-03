@@ -33,7 +33,7 @@ class ProducerBase(ABC):
         self,
         broker: Type["Broker"],
         *args,
-        name: Text = "Producer",
+        name: Text = "ProducerBase",
         block: bool = True,
         timeout: Optional[Number] = None,
         **kwargs,
