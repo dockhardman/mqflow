@@ -1,4 +1,5 @@
 from abc import ABC
+from multiprocessing import Queue as MPQueue
 from numbers import Number
 from queue import Queue, Empty as QueueEmpty, Full as QueueFull
 from typing import Generic, Optional, Text, TypeVar
@@ -156,3 +157,26 @@ class QueueBroker(BrokerBase[T]):
 
     def close(self) -> None:
         pass
+
+
+class MPQueueBroker(QueueBroker[T]):
+    def __init__(
+        self,
+        maxsize: int = 0,
+        *args,
+        name: Text = "MultipleProcessingBroker",
+        block: bool = True,
+        timeout: Optional[Number] = None,
+        queue: Optional["MPQueue[T]"] = None,
+        **kwargs,
+    ):
+        super().__init__(
+            maxsize, *args, name=name, block=block, timeout=timeout, kwargs=kwargs
+        )
+
+        self.queue = queue or MPQueue(maxsize=maxsize)
+        self.maxsize = self.queue._maxsize
+
+    def close(self) -> None:
+        self.queue.close()
+        self.queue.join_thread()
