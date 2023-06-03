@@ -42,7 +42,7 @@ class TimerProducer(ProducerBase):
         self.count_add_one()
 
     def _loop_check_stop(self, seconds: float) -> None:
-        _sleep_sec, _sleep_ns = modf(self.timer_seconds)
+        _sleep_sec, _sleep_ns = modf(seconds)
         for _ in range(int(_sleep_sec)):
             if self.is_stop():
                 return
