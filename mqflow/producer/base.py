@@ -1,6 +1,17 @@
 from abc import ABC
 from numbers import Number
-from typing import Optional, TYPE_CHECKING, Text, Type
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Optional,
+    TYPE_CHECKING,
+    Text,
+    Tuple,
+    Type,
+    TypeVar,
+)
+from typing_extensions import ParamSpec
 import logging
 import threading
 
@@ -13,7 +24,11 @@ if TYPE_CHECKING:
 logger = logging.getLogger(settings.logger_name)
 
 
-class Producer(ABC):
+T = TypeVar("T")
+P = ParamSpec("P")
+
+
+class ProducerBase(ABC):
     def __init__(
         self,
         broker: Type["Broker"],
@@ -46,3 +61,27 @@ class Producer(ABC):
 
     def is_stop(self) -> bool:
         return self._stop_event.is_set()
+
+
+class Producer(ProducerBase):
+    def __init__(
+        self,
+        broker: Type["Broker"],
+        *init_args,
+        target: Callable[P, T],
+        args: Tuple[Any, ...] = (),
+        kwargs: Optional[Dict[Text, Any]] = None,
+        name: Text = "Producer",
+        block: bool = True,
+        timeout: Optional[Number] = None,
+        **init_kwargs,
+    ):
+        super().__init__(
+            broker, *init_args, name=name, block=block, timeout=timeout, **init_kwargs
+        )
+        self.target = target
+        self.args = args
+        self.kwargs = kwargs or {}
+
+    def produce(self, **kwargs):
+        raise NotImplementedError

@@ -1,8 +1,10 @@
-from .base import Producer
-from .count_down import CountDownProducer
+from .base import ProducerBase, Producer
+from .timer import LoopingTimerProducer, TimerProducer
 
 
 __all__ = [
-    "CountDownProducer",
+    "LoopingTimerProducer",
     "Producer",
+    "ProducerBase",
+    "TimerProducer",
 ]
