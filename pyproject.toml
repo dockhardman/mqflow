@@ -8,6 +8,7 @@ packages = [{include = "mqflow"}]
 
 [tool.poetry.dependencies]
 python = ">=3.8.0,<3.11.0"
+typing-extensions = "*"
 rich = "*"
 pytz = "*"
 urllib3 = "1.26.16"
