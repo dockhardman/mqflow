@@ -66,7 +66,7 @@ class ProducerBase(ABC):
 class Producer(ProducerBase):
     def __init__(
         self,
-        broker: Type["Broker"],
+        broker: Type["Broker[T]"],
         *init_args,
         target: Callable[P, T],
         args: Tuple[Any, ...] = (),
@@ -80,8 +80,10 @@ class Producer(ProducerBase):
             broker, *init_args, name=name, block=block, timeout=timeout, **init_kwargs
         )
         self.target = target
-        self.args = args
-        self.kwargs = kwargs or {}
+        self.target_args = args
+        self.target_kwargs = kwargs or {}
 
     def produce(self, **kwargs):
-        raise NotImplementedError
+        result = self.target(*self.target_args, **self.target_kwargs)
+        self.broker.put(result, block=self.block, timeout=self.timeout)
+        self.count_add_one()
