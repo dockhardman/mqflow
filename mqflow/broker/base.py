@@ -106,15 +106,13 @@ class QueueBroker(BrokerBase[T]):
         return self.queue.full()
 
     def get(self, block: Optional[bool] = None, timeout: Optional[Number] = None) -> T:
-        block = block if block is None else self.block
-        timeout = timeout if timeout is None else self.timeout
+        block = self.block if block is None else block
+        timeout = self.timeout if timeout is None else timeout
 
         try:
             return self.queue.get(block=block, timeout=timeout)
         except QueueEmpty as e:
             raise EmptyError(e)
-        except TimeoutError as e:
-            raise e
         except Exception as e:
             raise e
 
@@ -132,15 +130,13 @@ class QueueBroker(BrokerBase[T]):
     def put(
         self, item: T, block: Optional[bool] = None, timeout: Optional[Number] = None
     ):
-        block = block if block is None else self.block
-        timeout = timeout if timeout is None else self.timeout
+        block = self.block if block is None else block
+        timeout = self.timeout if timeout is None else timeout
 
         try:
             self.queue.put(item, block=block, timeout=timeout)
         except QueueFull as e:
             raise FullError(e)
-        except TimeoutError as e:
-            raise e
         except Exception as e:
             raise e
 

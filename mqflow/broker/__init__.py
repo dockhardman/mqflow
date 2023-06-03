@@ -1,7 +1,7 @@
-from .base import Broker, QueueBroker
+from .base import BrokerBase, QueueBroker
 
 
 __all__ = [
-    "Broker",
+    "BrokerBase",
     "QueueBroker",
 ]

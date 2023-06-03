@@ -1,4 +1,6 @@
-import asyncio
+from asyncio import TimeoutError as AsyncioTimeoutError
+from concurrent.futures import TimeoutError as ConcurrentTimeoutError
+from multiprocessing import TimeoutError as MultiprocessingTimeoutError
 
 
 class EmptyError(Exception):
@@ -9,5 +11,10 @@ class FullError(Exception):
     pass
 
 
-class TimeoutError(asyncio.TimeoutError):
+class TimeoutError(
+    AsyncioTimeoutError,
+    ConcurrentTimeoutError,
+    MultiprocessingTimeoutError,
+    TimeoutError,
+):
     pass
