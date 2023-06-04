@@ -1,8 +1,7 @@
-from .base import Consumer, NullConsumer, PrintConsumer
+from .base import Consumer, ConsumerBase
 
 
 __all__ = [
     "Consumer",
-    "NullConsumer",
-    "PrintConsumer",
+    "ConsumerBase",
 ]

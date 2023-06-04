@@ -102,9 +102,7 @@ class Consumer(ConsumerBase[P, S, T]):
 
         self.target = target
         self.args = args
-        self.kwargs = kwargs
+        self.kwargs = kwargs or {}
 
-    async def consume(
-        self, *args, item: T, broker: Type[BrokerBase[T]], **kwargs
-    ) -> None:
+    def consume(self, *args, item: T, broker: Type[BrokerBase[T]], **kwargs) -> None:
         self.target(*self.args, item=item, **self.kwargs)
