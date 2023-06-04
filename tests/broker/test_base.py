@@ -1,57 +1,72 @@
-import asyncio
+from multiprocessing.queues import Queue
+from queue import Queue
 
-import pytest
-
-from simple_pymq.broker import QueueBroker
-from simple_pymq.exceptions import FullError, EmptyError
-
-
-@pytest.mark.asyncio
-async def test_queue_broker_basic_operation():
-    q = QueueBroker(maxsize=2)
-    assert await q.empty() is True
-
-    await q.put(True)
-    await q.put_nowait(True)
-
-    assert await q.qsize() == 2
-    assert await q.full() is True
-
-    await q.get()
-    await q.get_nowait()
+from mqflow.broker import MPQueueBroker, QueueBroker
+from mqflow.exceptions import EmptyError, FullError
 
 
-@pytest.mark.asyncio
-async def test_queue_broker_handle_operation_error():
-    q = QueueBroker(maxsize=2)
+def test_queue_broker():
+    value = 1
+    broker = QueueBroker()
+    broker.put(value)
+    assert broker.get() == value
+
+
+def test_queue_broker_exceptions():
+    maxsize = 1
+    broker = QueueBroker(queue=Queue(maxsize=maxsize))
 
     try:
-        await q.get_nowait()
+        broker.get_nowait()
+        assert False
     except EmptyError:
         pass
 
-    await q.put(True)
-    await q.put(True)
     try:
-        await q.put_nowait(True)
+        broker.put_nowait(1)
+        broker.put_nowait(2)
+        assert False
     except FullError:
         pass
 
-
-@pytest.mark.asyncio
-async def test_queue_broker_handle_timeout_error():
-    q = QueueBroker(maxsize=2)
-
     try:
-        await q.get(block=True, timeout=0.001)
+        broker.put(3, timeout=0.01)
         assert False
-    except asyncio.exceptions.TimeoutError:
+    except FullError:
         pass
 
     try:
-        await q.put(True, block=True, timeout=0.001)
-        await q.put(True, block=True, timeout=0.001)
-        await q.put(True, block=True, timeout=0.001)
+        broker.get(timeout=0.01)
+        broker.get(timeout=0.01)
         assert False
-    except asyncio.TimeoutError:
+    except EmptyError:
         pass
+
+
+def test_mp_queue_broker():
+    with MPQueueBroker(maxsize=1) as broker:
+        try:
+            broker.get_nowait()
+            assert False
+        except EmptyError:
+            pass
+
+        try:
+            broker.put_nowait(1)
+            broker.put_nowait(2)
+            assert False
+        except FullError:
+            pass
+
+        try:
+            broker.put(3, timeout=0.01)
+            assert False
+        except FullError:
+            pass
+
+        try:
+            broker.get(timeout=0.01)
+            broker.get(timeout=0.01)
+            assert False
+        except EmptyError:
+            pass

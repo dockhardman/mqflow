@@ -16,7 +16,7 @@ Simple message queue pipeline in memory:
 
 ```python
 import asyncio
-from simple_pymq import (
+from mqflow import (
     PrintConsumer,
     QueueBroker,
     SimpleMessageQueue,

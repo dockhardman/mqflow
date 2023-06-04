@@ -1,21 +1,29 @@
-import pytest
-
-from simple_pymq.broker import QueueBroker
-from simple_pymq.producer import TimeCounterProducer
-from simple_pymq.exceptions import FullError
+from mqflow.broker import QueueBroker
+from mqflow.producer import Producer
+from mqflow.exceptions import FullError
 
 
-@pytest.mark.asyncio
-async def test_time_counter_producer_basic_operation():
-    producer = TimeCounterProducer(count_seconds=0.001, max_produce_count=10)
-    q = QueueBroker(maxsize=5)
+def test_producer():
+    max_count = 1
+    sum_args = (1, 2, 3)
+    broker = QueueBroker()
+    producer = Producer(
+        target=lambda *args: sum(args), args=sum_args, max_count=max_count
+    )
+    producer.publish(broker)
+    assert producer.count == max_count
+    assert broker.get() == sum(sum_args)
+
+
+def test_producer_exceptions():
+    max_count = 1
+    sum_args = (1, 2, 3)
+    broker = QueueBroker(maxsize=max_count)
+    producer = Producer(target=lambda *args: sum(args), args=sum_args, timeout=0.01)
 
     try:
-        await producer.produce(
-            broker=q, block=False, timeout=1.0, raise_full_error=True
-        )
+        producer.publish(broker)
         assert False
     except FullError:
-        assert True
-
-    assert await q.full()
+        assert producer.count == max_count
+        assert broker.get() == sum(sum_args)
