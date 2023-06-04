@@ -1,117 +1,110 @@
-import logging
-import math
 from abc import ABC
-from typing import Any, Optional, Text, Type
+from typing import Any, Callable, Dict, Generic, Optional, Text, Tuple, Type, TypeVar
+from typing_extensions import ParamSpec
+import logging
+import threading
 
-from mqflow.broker.base import Broker
+from mqflow.broker.base import BrokerBase
 from mqflow.config import settings
 
 
 logger = logging.getLogger(settings.logger_name)
 
+P = ParamSpec("P")
+S = TypeVar("S")
+T = TypeVar("T")
 
-class Consumer(ABC):
+
+class ConsumerBase(ABC, Generic[P, S, T]):
     def __init__(
         self,
-        name: Text = "Consumer",
-        *args,
+        *init_args,
+        name: Text = "ConsumerBase",
         block: bool = True,
         timeout: Optional[float] = None,
-        max_consume_count: int = 0,
-        **kwargs,
+        max_count: Optional[int] = None,
+        **init_kwargs,
     ):
-        self.name = name or self.__class__.__name__
-        self.max_consume_count = 0 if max_consume_count <= 0 else int(max_consume_count)
+        self.name = name
+        if max_count is not None:
+            self.max_count = int(max_count) if int(max_count) > 0 else None
+        else:
+            self.max_count = None
         self.block = block
         self.timeout = timeout
 
-    async def listen(
+        self._count = 0
+        self._stop_event = threading.Event()
+
+    def listen(
         self,
-        broker: Type[Broker],
+        broker: Type[BrokerBase[T]],
         *args,
         block: Optional[bool] = None,
         timeout: Optional[float] = None,
-        max_consume_count: Optional[int] = None,
-        raise_error: bool = True,
+        max_count: Optional[int] = None,
         **kwargs,
     ):
         block = self.block if block is None else block
         timeout = self.timeout if timeout is None else timeout
-        max_consume_count = (
-            self.max_consume_count if max_consume_count is None else max_consume_count
-        )
-        max_consume_count = (
-            float("inf")
-            if max_consume_count <= 0 or math.isinf(max_consume_count)
-            else math.ceil(max_consume_count)
-        )
+        max_count = self.max_count if max_count is None else max_count
 
-        consume_count = 0
-        while True:
-            item = await broker.get(block=block, timeout=timeout)
+        count = 0
+        while self.is_stop() is False and (
+            self.max_count is None or count < self.max_count
+        ):
+            item = broker.get(block=block, timeout=timeout)
 
-            try:
-                await self.consume(item=item, broker=broker)
+            self.consume(item=item, broker=broker)
+            broker.task_done()
 
-            except Exception as e:
-                logger.exception(e)
-                logger.error(f"Consumer '{self.name}' raise error: {str(e)}")
-                if raise_error is True:
-                    raise e
+            count += 1
+            self.count_add_one()
 
-            finally:
-                consume_count += 1
-
-            if consume_count >= max_consume_count:
-                break
-
-    async def consume(self, item: Any):
+    def consume(self, *args, item: T, broker: Type[BrokerBase[T]], **kwargs) -> None:
         raise NotImplementedError
 
+    @property
+    def count(self) -> int:
+        return self._count
 
-class NullConsumer(Consumer):
+    def count_add_one(self) -> None:
+        self._count += 1
+
+    def stop(self) -> None:
+        self._stop_event.set()
+
+    def is_stop(self) -> bool:
+        return self._stop_event.is_set()
+
+
+class Consumer(ConsumerBase[P, S, T]):
     def __init__(
         self,
-        name: Text = "NullConsumer",
-        *args,
+        target: Callable[P, S],
+        args: Tuple[Any, ...] = (),
+        kwargs: Optional[Dict[Text, Any]] = None,
+        *init_args,
+        name: Text = "Consumer",
         block: bool = True,
         timeout: Optional[float] = None,
-        max_consume_count: int = 0,
-        **kwargs,
+        max_count: Optional[int] = None,
+        **init_kwargs,
     ):
-        super(NullConsumer, self).__init__(
+        super().__init__(
             name=name,
-            *args,
+            *init_args,
             block=block,
             timeout=timeout,
-            max_consume_count=max_consume_count,
-            **kwargs,
+            max_count=max_count,
+            **init_kwargs,
         )
 
-    async def consume(self, item: Any, broker: Type[Broker]):
-        await broker.task_done()
+        self.target = target
+        self.args = args
+        self.kwargs = kwargs
 
-
-class PrintConsumer(Consumer):
-    def __init__(
-        self,
-        name: Text = "PrintConsumer",
-        *args,
-        block: bool = True,
-        timeout: Optional[float] = None,
-        max_consume_count: int = 0,
-        **kwargs,
-    ):
-        super(PrintConsumer, self).__init__(
-            name=name,
-            *args,
-            block=block,
-            timeout=timeout,
-            max_consume_count=max_consume_count,
-            **kwargs,
-        )
-
-    async def consume(self, item: Any, broker: Type[Broker]):
-        print(item)
-        logger.info(item)
-        await broker.task_done()
+    async def consume(
+        self, *args, item: T, broker: Type[BrokerBase[T]], **kwargs
+    ) -> None:
+        self.target(*self.args, item=item, **self.kwargs)
