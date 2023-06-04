@@ -1,4 +1,4 @@
 from typing import Text
 
 
-version: Text = "0.1.0"
+version: Text = "0.4.0"
