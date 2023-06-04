@@ -3,9 +3,11 @@ from typing import Any, Callable, Dict, Generic, Optional, Text, Tuple, Type, Ty
 from typing_extensions import ParamSpec
 import logging
 import threading
+import time
 
 from mqflow.broker.base import BrokerBase
 from mqflow.config import settings
+from mqflow.exceptions import EmptyError
 
 
 logger = logging.getLogger(settings.logger_name)
@@ -50,18 +52,32 @@ class ConsumerBase(ABC, Generic[P, S, T]):
         max_count = self.max_count if max_count is None else max_count
 
         count = 0
+        time_start = time.time()
         while self.is_stop() is False and (
             self.max_count is None or count < self.max_count
         ):
-            item = broker.get(block=block, timeout=timeout)
+            try:
+                item = broker.get(block=block, timeout=1.0)
+            except EmptyError as e:
+                if timeout is not None and time.time() - time_start > timeout:
+                    self.stop()
+                    raise e
+                continue
+            except KeyboardInterrupt:
+                self.stop()
+                return
+            except Exception as e:
+                logger.exception(e)
+                self.stop()
+                return
 
-            self.consume(item=item, broker=broker)
+            self.consume(item, broker)
             broker.task_done()
 
             count += 1
             self.count_add_one()
 
-    def consume(self, *args, item: T, broker: Type[BrokerBase[T]], **kwargs) -> None:
+    def consume(self, item: T, broker: Type[BrokerBase[T]], *args, **kwargs) -> None:
         raise NotImplementedError
 
     @property
@@ -104,5 +120,5 @@ class Consumer(ConsumerBase[P, S, T]):
         self.args = args
         self.kwargs = kwargs or {}
 
-    def consume(self, *args, item: T, broker: Type[BrokerBase[T]], **kwargs) -> None:
-        self.target(*self.args, item=item, **self.kwargs)
+    def consume(self, item: T, broker: Type[BrokerBase[T]], *args, **kwargs) -> None:
+        self.target(item, broker, *self.args, **self.kwargs)
