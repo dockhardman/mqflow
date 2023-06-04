@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "simple-pymq"
+name = "mqflow"
 version = "0.4.0"
 description = "Simple python message queue framework is ready to serve."
 authors = ["Allen Chou <f1470891079@gmail.com>"]
