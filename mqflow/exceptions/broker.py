@@ -1,13 +1,14 @@
 from asyncio import TimeoutError as AsyncioTimeoutError
 from concurrent.futures import TimeoutError as ConcurrentTimeoutError
 from multiprocessing import TimeoutError as MultiprocessingTimeoutError
+from queue import Full, Empty
 
 
-class EmptyError(Exception):
+class EmptyError(Empty):
     pass
 
 
-class FullError(Exception):
+class FullError(Full):
     pass
 
 
