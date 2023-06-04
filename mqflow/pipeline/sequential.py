@@ -1,68 +1,80 @@
-import asyncio
-from abc import ABC
-from typing import List, Type, Union
+from threading import Thread
+from typing import List, Optional, TYPE_CHECKING, Text, Type, TypeVar
+from typing_extensions import ParamSpec
+import logging
 
-from mqflow.broker.base import Broker
-from mqflow.consumer.base import Consumer
-from mqflow.producer.base import Producer
-from mqflow.config import logger
+from mqflow.pipeline.base import MessageQueueBase
+from mqflow.config import settings
+
+if TYPE_CHECKING:
+    from mqflow.broker.base import BrokerBase
+    from mqflow.consumer.base import ConsumerBase
+    from mqflow.producer.base import ProducerBase
 
 
-class MessageQueue(ABC):
-    def __init__(self, *args, **kwargs):
-        pass
+logger = logging.Logger(settings.logger_name)
 
-    async def run(
+P = ParamSpec("P")
+S = TypeVar("S")
+T = TypeVar("T")
+
+
+class SequentialMessageQueue(MessageQueueBase[P, S, T]):
+    def __init__(
         self,
-        broker: Type[Broker],
         *args,
-        producers: Union[List[Type[Producer]], Producer],
-        consumers: Union[List[Type[Consumer]], Consumer],
+        name: Text = "SequentialMessageQueue",
+        producers: Optional[List[Type["ProducerBase[T]"]]] = None,
+        consumers: Optional[List[Type["ConsumerBase[P, S, T]"]]] = None,
+        broker: Optional[Type["BrokerBase[T]"]] = None,
         **kwargs,
     ):
-        raise NotImplementedError
-
-
-class SimpleMessageQueue(MessageQueue):
-    def __init__(self, *args, **kwargs):
-        pass
-
-    async def run(
-        self,
-        broker: Type[Broker],
-        *args,
-        producers: Union[List[Type[Producer]], Producer],
-        consumers: Union[List[Type[Consumer]], Consumer],
-        **kwargs,
-    ):
-        producers: List[Type[Producer]] = (
-            [producers] if isinstance(producers, Producer) else producers
-        )
-        consumers: List[Type[Consumer]] = (
-            [consumers] if isinstance(consumers, Consumer) else consumers
+        super().__init__(
+            *args, producers=producers, consumers=consumers, broker=broker, **kwargs
         )
 
-        if len(producers) == 0:
-            raise ValueError(f"Should provide at least one producer.")
-        if len(consumers) == 0:
-            raise ValueError(f"Should provide at least one consumer.")
+    def run(self, *args, **kwargs):
+        if not self.producers or not self.consumers or self.broker is None:
+            raise ValueError("No producers, consumers, or broker defined")
 
-        tasks: List["asyncio.Task"] = []
+        producer_threads = [
+            Thread(target=producer.publish, kwargs=dict(broker=self.broker))
+            for producer in self.producers
+        ]
+        consumer_threads = [
+            Thread(target=consumer.listen, kwargs=dict(broker=self.broker))
+            for consumer in self.consumers
+        ]
 
-        for producer in producers:
-            _producer_task = asyncio.create_task(
-                producer.produce(broker=broker, *args, **kwargs)
-            )
-            tasks.append(_producer_task)
+        for thread in producer_threads:
+            thread.start()
+        for thread in consumer_threads:
+            thread.start()
 
-        for consumer in consumers:
-            _consumer_task = asyncio.create_task(
-                consumer.listen(broker=broker, *args, **kwargs)
-            )
-            tasks.append(_consumer_task)
+        try:
+            for thread in producer_threads:
+                thread.join()
+            for thread in consumer_threads:
+                thread.join()
 
-        task_results = await asyncio.gather(*tasks, return_exceptions=True)
+        except KeyboardInterrupt:
+            logger.info("KeyboardInterrupt")
+            [producer.stop() for producer in self.producers]
+            [consumer.stop() for consumer in self.consumers]
+            for thread in producer_threads:
+                thread.join()
+            for thread in consumer_threads:
+                thread.join()
 
-        for task_result in task_results:
-            if isinstance(task_result, Exception):
-                logger.exception(task_result)
+        except Exception as e:
+            logger.exception(e)
+            logger.info(f"Raise exception stop: {e}")
+            [producer.stop() for producer in self.producers]
+            [consumer.stop() for consumer in self.consumers]
+            for thread in producer_threads:
+                thread.join()
+            for thread in consumer_threads:
+                thread.join()
+
+        finally:
+            self.finish()

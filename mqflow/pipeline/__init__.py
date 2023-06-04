@@ -1,7 +1,8 @@
-from .sequential import SimpleMessageQueue, MessageQueue
+from .base import MessageQueueBase
+from .sequential import SequentialMessageQueue
 
 
 __all__ = [
-    "MessageQueue",
-    "SimpleMessageQueue",
+    "MessageQueueBase",
+    "SequentialMessageQueue",
 ]
